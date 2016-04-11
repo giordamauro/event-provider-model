@@ -28,7 +28,7 @@ public class Application {
 
 			public void onStart(OnStartEvent event) {
 				
-				System.out.println("On Start was called");
+				System.out.println("On Start was called at: " + event.getDate());
 			}};
 		handler.subscribeListener(user, listener);
 		

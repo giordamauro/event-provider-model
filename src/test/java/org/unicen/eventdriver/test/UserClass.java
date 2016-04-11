@@ -1,5 +1,7 @@
 package org.unicen.eventdriver.test;
 
+import java.util.Date;
+
 import org.unicen.eventdriver.ProviderClass;
 
 public class UserClass implements SimpleEventProvider {
@@ -17,6 +19,6 @@ public class UserClass implements SimpleEventProvider {
 		
 		System.out.println("Creating OnStart Event");
 		
-		return null;
+		return new OnStartEvent(new Date());
 	}
 }

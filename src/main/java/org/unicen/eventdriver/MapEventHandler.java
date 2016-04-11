@@ -47,6 +47,13 @@ public class MapEventHandler implements EventHandler {
 		return proxy;
 	}
 	
+	private static final Thread.UncaughtExceptionHandler eh = new Thread.UncaughtExceptionHandler() {
+	    
+		public void uncaughtException(Thread th, Throwable ex) {
+	        System.out.println("Uncaught exception: " + ex);
+	    }
+	};
+	
 	private static class EventInvocationHandler implements InvocationHandler {
 
 		private final MapEventHandler eventHandler;
@@ -57,18 +64,46 @@ public class MapEventHandler implements EventHandler {
 			this.instance = instance;
 		}
 
-		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+
+			Thread invocationThread = new Thread(){
+			    public void run() {
+			    	try {
+						doInvokation(method, args);
+					} catch (Throwable e) {
+						throw new IllegalStateException(e);
+					}
+				}
+			};
+			invocationThread.setUncaughtExceptionHandler(eh);
+			invocationThread.start();
 			
-			Object value = method.invoke(instance, args);
+			return null;
+		}
+		
+		private Object doInvokation(Method method, Object[] args) throws Throwable {
+			
+			final Object value = method.invoke(instance, args);
 			
 			Set<Listener> subscribers = eventHandler.listeners.get(instance);
 			if(subscribers != null) {
 				
-				for(Listener listener : subscribers) {
+				for(final Listener listener : subscribers) {
 
-					Method listenerMethod = findMethodByName(listener.getClass(), method.getName());
+					final Method listenerMethod = findMethodByName(listener.getClass(), method.getName());
 					listenerMethod.setAccessible(true);
-					listenerMethod.invoke(listener, value);
+					
+					Thread eventThread = new Thread(){
+					    public void run() {
+					    	try {
+								listenerMethod.invoke(listener, value);
+							} catch (Exception e) {
+								throw new IllegalStateException(e);
+							}
+					    }
+					};
+					eventThread.setUncaughtExceptionHandler(eh);
+					eventThread.start();
 				}
 			}
 			
