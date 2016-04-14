@@ -1,14 +1,13 @@
 package org.unicen.operation.test;
 
-import org.unicen.operation.AbstractStartFinishOperation;
+import org.unicen.operation.AbstractSimpleOperation;
+import org.unicen.operation.OperationContext;
 
-public class TestPlan extends AbstractStartFinishOperation {
+public class TestPlan extends AbstractSimpleOperation {
 
 	@Override
-	public void doExecute() throws Throwable {
+	public void doExecute(OperationContext context) throws Throwable {
 
 		System.out.println("Estoy corriendo un test");
-		
 	}
-
 }

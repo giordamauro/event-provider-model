@@ -25,7 +25,6 @@ public class OnFinishEvent extends OperationEvent {
 
 	@Override
 	public String toString() {
-		return "OnFinishEvent [date=" + date + ", tookMillis=" + tookMillis + ", getOperationContext()="
-				+ getOperationContext() + "]";
+		return "OnFinishEvent [date=" + date + ", tookMillis=" + tookMillis + "]";
 	}
 }

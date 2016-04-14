@@ -1,33 +1,47 @@
 package org.unicen.operation;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class OperationContext {
 
-	private final Operation currentOperation;
-	private final Map<String, Object> data; 
+	private final Map<String, Object> globalData = new ConcurrentHashMap<>();
+	private final Map<Operation, Map<String, Object>> operationsData = new ConcurrentHashMap<>();
 	
-	public OperationContext(Operation currentOperation) {
-		this.currentOperation = currentOperation;
-		this.data = new HashMap<>();
+	@SuppressWarnings("unchecked")
+	public <T> T getGlobal(String name) {
+		return (T) globalData.get(name);
 	}
 
-	public Operation getCurrentOperation() {
-		return currentOperation;
+	public void setGlobal(String name, Object value) {
+		globalData.put(name, value);
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized <T> T getContextData(String name) {
-		return (T) data.get(name);
+	public <T> T getOperationData(Operation operation, String name) {
+
+		Map<String, Object> operationData = operationsData.get(operation);
+		
+		if(operationData != null){
+			return (T) operationData.get(name);
+		}
+		return null;
 	}
 
-	public synchronized void setContextData(String name, Object value) {
-		data.put(name, value);
+	public Map<String, Object> getAllOperationData(Operation operation) {
+
+		return operationsData.get(operation);
 	}
 
-	@Override
-	public String toString() {
-		return "OperationContext [currentOperation=" + currentOperation + ", data=" + data + "]";
+	public void setOperationData(Operation operation, String name, Object value) {
+
+		Map<String, Object> operationData = operationsData.get(operation);
+		
+		if(operationData == null){
+			operationData = new ConcurrentHashMap<>();
+			this.operationsData.put(operation, operationData);
+		}
+		
+		operationData.put(name, value);
 	}
 }

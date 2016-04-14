@@ -1,15 +1,14 @@
-package org.unicen.operation.event;
+package org.unicen.operation.result;
 
 import org.unicen.eventdriver.Listener;
 import org.unicen.eventdriver.test.OnStartEvent;
 import org.unicen.operation.event.OnFailEvent;
-import org.unicen.operation.event.OnFinishEvent;
 
-public interface StartFinishListener extends Listener {
+public interface ResultOperationListener<T> extends Listener {
 
 	void onStart(OnStartEvent onStartEvent);
 	
-	void onFinish(OnFinishEvent onFinishEvent);
+	void onFinish(OnFinishResultEvent<T> onFinishEvent);
 	
 	void onFail(OnFailEvent onFailEvent);
 }
