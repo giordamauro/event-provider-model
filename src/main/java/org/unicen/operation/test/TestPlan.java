@@ -8,6 +8,7 @@ public class TestPlan implements SimpleOperation {
 	@Override
 	public void execute(OperationContext context) throws Throwable {
 
-		System.out.println("Estoy corriendo un test");
+//		System.out.println("Estoy corriendo un test");
+		throw new IllegalStateException("exceptionn");
 	}
 }

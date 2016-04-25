@@ -1,4 +1,4 @@
-package org.unicen.eventdriver.test;
+package org.unicen.eventdriver.event;
 
 import org.unicen.eventdriver.EventListener;
 
