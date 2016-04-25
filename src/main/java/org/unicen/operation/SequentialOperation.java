@@ -2,7 +2,7 @@ package org.unicen.operation;
 
 import java.util.List;
 
-public class SequentialOperation extends AbstractSimpleOperation {
+public class SequentialOperation implements SimpleOperation {
 
 	private final List<ResultOperation<?>> steps;
 
@@ -11,7 +11,7 @@ public class SequentialOperation extends AbstractSimpleOperation {
 	}
 	
 	@Override
-	protected void doExecute(OperationContext context) throws Throwable {
+	public void execute(OperationContext context) throws Throwable {
 		
 		for(ResultOperation<?> operation : steps) {
 			operation.execute(context);

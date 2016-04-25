@@ -69,7 +69,7 @@ public class MapEventHandler implements EventHandler {
 			Thread invocationThread = new Thread(){
 			    public void run() {
 			    	try {
-						doInvokation(method, args);
+						doInvocation(method, args);
 					} catch (Throwable e) {
 						throw new IllegalStateException(e);
 					}
@@ -81,7 +81,7 @@ public class MapEventHandler implements EventHandler {
 			return null;
 		}
 		
-		private Object doInvokation(Method method, Object[] args) throws Throwable {
+		private Object doInvocation(Method method, Object[] args) throws Throwable {
 			
 			final Object value = method.invoke(instance, args);
 			

@@ -8,18 +8,25 @@ import org.unicen.operation.event.OnFinishEvent;
 import org.unicen.operation.event.OnStartEvent;
 import org.unicen.operation.event.StartFinishEventProvider;
 
-public abstract class AbstractSimpleOperation implements SimpleOperation, StartFinishEventProvider {
+class SimpleOperationEventProvider implements SimpleOperation, StartFinishEventProvider {
 
 	@ProviderClass
 	private StartFinishEventProvider provider;
 	
+	private final SimpleOperation operation;
+	
+	public SimpleOperationEventProvider(SimpleOperation operation) {
+	
+		this.operation = operation;
+	}
+
 	@Override
 	public void execute(OperationContext context) throws Throwable {
 		
 		provider.onStart(context);
 		
 		try {
-			doExecute(context);
+			operation.execute(context);
 
 			provider.onFinish(context);
 			
@@ -27,12 +34,10 @@ public abstract class AbstractSimpleOperation implements SimpleOperation, StartF
 			
 			provider.onFail(context, e);
 			
-			throw new IllegalStateException("Exception executing operation " + this.toString(), e);
+			throw e;
 		}
 	}
 	
-	protected abstract void doExecute(OperationContext context) throws Throwable;
-
 	@Override
 	public OnStartEvent onStart(OperationContext context) {
 		

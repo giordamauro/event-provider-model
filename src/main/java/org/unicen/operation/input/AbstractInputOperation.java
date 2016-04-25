@@ -3,6 +3,7 @@ package org.unicen.operation.input;
 import java.util.Date;
 
 import org.unicen.eventdriver.ProviderClass;
+import org.unicen.operation.InputOperation;
 import org.unicen.operation.OperationContext;
 import org.unicen.operation.event.OnFailEvent;
 import org.unicen.operation.result.OnFinishResultEvent;

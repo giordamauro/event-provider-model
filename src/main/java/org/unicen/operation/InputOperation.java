@@ -1,7 +1,4 @@
-package org.unicen.operation.input;
-
-import org.unicen.operation.Operation;
-import org.unicen.operation.OperationContext;
+package org.unicen.operation;
 
 public interface InputOperation<T, E> extends Operation {
 
