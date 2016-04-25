@@ -2,23 +2,16 @@ package org.unicen.eventdriver.test;
 
 import java.util.Date;
 
-import org.unicen.eventdriver.ProviderClass;
+import org.unicen.eventdriver.EventProvider;
 
-public class UserClass implements SimpleEventProvider {
+public class UserClass {
 
-	@ProviderClass
-	private SimpleEventProvider provider;
+	@EventProvider
+	private SimpleListener provider;
 
 	public void execute() {
 		
-		provider.onStart();
+		provider.onStart(new OnStartEvent(new Date()));
 		
-	}
-	
-	public OnStartEvent onStart() {
-		
-		System.out.println("Creating OnStart Event");
-		
-		return new OnStartEvent(new Date());
-	}
+	}	
 }

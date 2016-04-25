@@ -2,7 +2,7 @@ package org.unicen.eventdriver;
 
 public interface EventHandler {
 
-	<T extends Listener> void subscribeListener(EventProvider<? extends T> provider, T listener);
+	void subscribeListener(Object provider, EventListener listener);
 	
 	/**
 	 * Creates a provider instance wired to this handler, 
@@ -12,5 +12,5 @@ public interface EventHandler {
 	 * 
 	 * @return T extends EventProvider<?>
 	 */
-	<T extends EventProvider<?>> T createProvider(T implementation);
+	<T extends EventListener> T createProvider(Object provider, Class<T> listenerClass);
 }

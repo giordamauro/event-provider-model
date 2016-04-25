@@ -1,5 +1,5 @@
 package org.unicen.eventdriver;
 
-public interface Listener {
+public interface EventListener {
 
 }

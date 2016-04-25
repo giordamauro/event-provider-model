@@ -2,20 +2,20 @@ package org.unicen.operation;
 
 import java.util.Date;
 
-import org.unicen.eventdriver.ProviderClass;
+import org.unicen.eventdriver.EventProvider;
 import org.unicen.operation.event.OnFailEvent;
 import org.unicen.operation.event.OnFinishEvent;
 import org.unicen.operation.event.OnStartEvent;
-import org.unicen.operation.event.StartFinishEventProvider;
+import org.unicen.operation.event.StartFinishListener;
 
-class SimpleOperationEventProvider implements SimpleOperation, StartFinishEventProvider {
+class StartFinishEventProvider implements SimpleOperation {
 
-	@ProviderClass
-	private StartFinishEventProvider provider;
+	@EventProvider
+	private StartFinishListener provider;
 	
 	private final SimpleOperation operation;
 	
-	public SimpleOperationEventProvider(SimpleOperation operation) {
+	public StartFinishEventProvider(SimpleOperation operation) {
 	
 		this.operation = operation;
 	}
@@ -23,23 +23,22 @@ class SimpleOperationEventProvider implements SimpleOperation, StartFinishEventP
 	@Override
 	public void execute(OperationContext context) throws Throwable {
 		
-		provider.onStart(context);
+		provider.onStart(onStartEvent(context));
 		
 		try {
 			operation.execute(context);
 
-			provider.onFinish(context);
+			provider.onFinish(onFinishEvent(context));
 			
 		} catch(Throwable e){
 			
-			provider.onFail(context, e);
+			provider.onFail(onFailEvent(context, e));
 			
 			throw e;
 		}
 	}
 	
-	@Override
-	public OnStartEvent onStart(OperationContext context) {
+	public OnStartEvent onStartEvent(OperationContext context) {
 		
 		Date startDate = new Date();
 		context.setOperationData(this, "startDate", startDate);
@@ -47,8 +46,8 @@ class SimpleOperationEventProvider implements SimpleOperation, StartFinishEventP
 		return new OnStartEvent(context, startDate);
 	}
 
-	@Override
-	public OnFinishEvent onFinish(OperationContext context) {
+	
+	public OnFinishEvent onFinishEvent(OperationContext context) {
 
 		Date endDate = new Date();
 		Date startDate = context.getOperationData(this, "startDate");
@@ -61,8 +60,8 @@ class SimpleOperationEventProvider implements SimpleOperation, StartFinishEventP
 		return new OnFinishEvent(context, endDate, took);
 	}
 
-	@Override
-	public OnFailEvent onFail(OperationContext context, Throwable exception) {
+	
+	public OnFailEvent onFailEvent(OperationContext context, Throwable exception) {
 		
 		Date failDate = new Date();
 		Date startDate = context.getOperationData(this, "startDate");

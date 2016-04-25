@@ -1,42 +1,46 @@
-package org.unicen.operation.input;
+package org.unicen.operation;
 
 import java.util.Date;
 
-import org.unicen.eventdriver.ProviderClass;
-import org.unicen.operation.InputOperation;
-import org.unicen.operation.OperationContext;
+import org.unicen.eventdriver.EventProvider;
+import org.unicen.operation.event.InputOperationListener;
 import org.unicen.operation.event.OnFailEvent;
-import org.unicen.operation.result.OnFinishResultEvent;
+import org.unicen.operation.event.OnFinishResultEvent;
+import org.unicen.operation.event.OnStartInputEvent;
 
-public abstract class AbstractInputOperation<T, E> implements InputOperation<T, E>, InputOperationEventProvider<T, E> {
+public class InputOperationEventProvider<T, E> implements InputOperation<T, E> {
 
-	@ProviderClass
-	private InputOperationEventProvider<T, E> provider;
+	@EventProvider
+	private InputOperationListener<T, E> provider;
 	
-	@Override
+	private final InputOperation<T, E> operation;
+	
+	public InputOperationEventProvider(InputOperation<T, E> operation) {
+        this.operation = operation;
+    }
+
+    @Override
 	public T execute(E input, OperationContext context) throws Throwable {
 		
-		provider.onStart(context, input);
+		provider.onStart(onStartEvent(context, input));
 		
 		try {
-			T result = doExecute(context);
+			T result = operation.execute(input, context);
 
-			provider.onFinish(context, result);
+			provider.onFinish(onFinishEvent(context, result));
 			
 			return result;
 			
 		} catch(Throwable e){
 			
-			provider.onFail(context, e);
+			provider.onFail(onFailEvent(context, e));
 			
 			throw new IllegalStateException("Exception executing operation " + this.toString(), e);
 		}
 	}
-	
-	protected abstract T doExecute(OperationContext context) throws Throwable;
 
-	@Override
-	public OnStartInputEvent<E> onStart(OperationContext context, E input) {
+	
+	public OnStartInputEvent<E> onStartEvent(OperationContext context, E input) {
 		
 		Date startDate = new Date();
 		context.setOperationData(this, "startDate", startDate);
@@ -45,8 +49,8 @@ public abstract class AbstractInputOperation<T, E> implements InputOperation<T, 
 		return new OnStartInputEvent<>(context, startDate, input);
 	}
 
-	@Override
-	public OnFinishResultEvent<T> onFinish(OperationContext context, T result) {
+	
+	public OnFinishResultEvent<T> onFinishEvent(OperationContext context, T result) {
 
 		Date endDate = new Date();
 		Date startDate = context.getOperationData(this, "startDate");
@@ -60,8 +64,8 @@ public abstract class AbstractInputOperation<T, E> implements InputOperation<T, 
 		return new OnFinishResultEvent<>(context, endDate, took, result);
 	}
 
-	@Override
-	public OnFailEvent onFail(OperationContext context, Throwable exception) {
+	
+	public OnFailEvent onFailEvent(OperationContext context, Throwable exception) {
 		
 		Date failDate = new Date();
 		Date startDate = context.getOperationData(this, "startDate");
@@ -73,4 +77,14 @@ public abstract class AbstractInputOperation<T, E> implements InputOperation<T, 
 		
 		return new OnFailEvent(context, exception);
 	}
+
+    @Override
+    public Class<E> getInputType() {
+       return operation.getInputType();
+    }
+
+    @Override
+    public Class<T> getOutputType() {
+        return operation.getOutputType();
+    }
 }

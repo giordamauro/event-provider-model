@@ -3,124 +3,108 @@ package org.unicen.eventdriver;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public class MapEventHandler implements EventHandler {
 
-	private Map<EventProvider<?>, Set<Listener>> listeners = new HashMap<EventProvider<?>, Set<Listener>>();
+    private Map<Object, Set<EventListener>> listeners = new HashMap<Object, Set<EventListener>>();
 
-	public <T extends Listener> void subscribeListener(EventProvider<? extends T> provider, T listener) {
+    public void subscribeListener(Object provider, EventListener listener) {
 
-		Objects.requireNonNull(provider);
-		Objects.requireNonNull(listener);
+        Objects.requireNonNull(provider);
+        Objects.requireNonNull(listener);
 
-		Set<Listener> subscribers = listeners.get(provider);
-		if (subscribers == null) {
-			subscribers = new HashSet<Listener>();
-			listeners.put(provider, subscribers);
-		}
+        Set<EventListener> subscribers = listeners.get(provider);
+        if (subscribers == null) {
+            subscribers = new HashSet<EventListener>();
+            listeners.put(provider, subscribers);
+        }
 
-		subscribers.add(listener);
-	}
+        subscribers.add(listener);
+    }
 
-	/**
-	 * Creates a provider instance wired to this handler, by wrapping the
-	 * interface and delegating to the class.
-	 * 
-	 * @param implClass
-	 * @return T extends EventProvider<?>
-	 */
-	public <T extends EventProvider<?>> T createProvider(T implementation) {
+    /**
+     * Creates a provider instance wired to this handler, by wrapping the
+     * interface and delegating to the class.
+     * 
+     * @param implClass
+     * @return T extends EventProvider<?>
+     */
+    public <T extends EventListener> T createProvider(Object provider, Class<T> listenerInterface) {
 
-//		TODO: Check the interface & implementation -> listener + event provider
-		
-		Class<?>[] interfaces = implementation.getClass().getInterfaces();
-		EventInvocationHandler eventInvocationHandler = new EventInvocationHandler(this, implementation);
+        // TODO: Check the interface & implementation -> listener + event
+        // provider
 
-		@SuppressWarnings("unchecked")
-		T proxy = (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), interfaces, eventInvocationHandler);
+        Set<EventListener> listenerSubscribers = listeners.get(provider);
+        if (listenerSubscribers == null) {
+            listenerSubscribers = Collections.emptySet();
+        }
 
-		return proxy;
-	}
-	
-	private static final Thread.UncaughtExceptionHandler eh = new Thread.UncaughtExceptionHandler() {
-	    
-		public void uncaughtException(Thread th, Throwable ex) {
-	        System.out.println("Uncaught exception: " + ex);
-	    }
-	};
-	
-	private static class EventInvocationHandler implements InvocationHandler {
+        EventInvocationHandler eventInvocationHandler = new EventInvocationHandler(listenerSubscribers);
 
-		private final MapEventHandler eventHandler;
-		private final Object instance;
-		
-		public EventInvocationHandler(MapEventHandler eventHandler, Object instance) {
-			this.eventHandler = eventHandler;
-			this.instance = instance;
-		}
+        Class<?>[] interfaces = new Class<?>[] { listenerInterface };
 
-		public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+        @SuppressWarnings("unchecked")
+        T proxy = (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), interfaces, eventInvocationHandler);
 
-			Thread invocationThread = new Thread(){
-			    public void run() {
-			    	try {
-						doInvocation(method, args);
-					} catch (Throwable e) {
-						throw new IllegalStateException(e);
-					}
-				}
-			};
-			invocationThread.setUncaughtExceptionHandler(eh);
-			invocationThread.start();
-			
-			return null;
-		}
-		
-		private Object doInvocation(Method method, Object[] args) throws Throwable {
-			
-			final Object value = method.invoke(instance, args);
-			
-			Set<Listener> subscribers = eventHandler.listeners.get(instance);
-			if(subscribers != null) {
-				
-				for(final Listener listener : subscribers) {
+        return proxy;
+    }
+    
+    private static class EventInvocationHandler implements InvocationHandler {
 
-					final Method listenerMethod = findMethodByName(listener.getClass(), method.getName());
-					listenerMethod.setAccessible(true);
-					
-					Thread eventThread = new Thread(){
-					    public void run() {
-					    	try {
-								listenerMethod.invoke(listener, value);
-							} catch (Exception e) {
-								throw new IllegalStateException(e);
-							}
-					    }
-					};
-					eventThread.setUncaughtExceptionHandler(eh);
-					eventThread.start();
-				}
-			}
-			
-			return value;
-		}
-		
-		private Method findMethodByName(Class<?> aClass, String methodName) {
-			
-			Method[] methods = aClass.getDeclaredMethods();
-			
-			for(Method method : methods) {
-				if(method.getName().equals(methodName)){
-					return method;
-				}
-			}
-			
-			throw new IllegalStateException(String.format("Method name '%s' not found in class %s", methodName, aClass.getName()));
-		}
-	}
+        private final ExecutorService executorService;
+        private final Set<EventListener> subscribers;
+
+        public EventInvocationHandler(Set<EventListener> subscribers) {
+
+            this.subscribers = subscribers;
+            this.executorService = (!subscribers.isEmpty()) ? Executors.newFixedThreadPool(subscribers.size(), threadFactory) : null;
+        }
+
+        public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+
+            for (final EventListener listener : subscribers) {
+
+                executorService.execute(new Runnable() {
+
+                    public void run() {
+                        try {
+                            method.invoke(listener, args);
+                        } catch (Exception e) {
+                            throw new IllegalStateException(e);
+                        }
+                    }
+                });
+            }
+
+            return null;
+        }
+    }
+    
+    private static final ThreadFactory threadFactory = new ThreadFactory() {
+
+        @Override
+        public Thread newThread(Runnable r) {
+
+            Thread eventThread = new Thread(r);
+            eventThread.setUncaughtExceptionHandler(eh);
+
+            return eventThread;
+        }
+    };
+    
+    private static final Thread.UncaughtExceptionHandler eh = new Thread.UncaughtExceptionHandler() {
+
+        public void uncaughtException(Thread th, Throwable ex) {
+            System.out.println("Uncaught exception: " + ex);
+        }
+    };
 }

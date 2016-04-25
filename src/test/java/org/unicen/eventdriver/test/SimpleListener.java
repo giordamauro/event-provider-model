@@ -1,8 +1,8 @@
 package org.unicen.eventdriver.test;
 
-import org.unicen.eventdriver.Listener;
+import org.unicen.eventdriver.EventListener;
 
-public interface SimpleListener extends Listener {
+public interface SimpleListener extends EventListener {
 
 	void onStart(OnStartEvent event);
 }

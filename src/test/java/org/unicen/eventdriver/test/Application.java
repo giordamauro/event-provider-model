@@ -3,10 +3,9 @@ package org.unicen.eventdriver.test;
 import java.lang.reflect.Field;
 
 import org.unicen.eventdriver.EventHandler;
+import org.unicen.eventdriver.EventListener;
 import org.unicen.eventdriver.EventProvider;
-import org.unicen.eventdriver.Listener;
 import org.unicen.eventdriver.MapEventHandler;
-import org.unicen.eventdriver.ProviderClass;
 
 /**
  * Spring Boot Main Class. Holds the default Spring Boot default configuration.  
@@ -22,9 +21,8 @@ public class Application {
 		EventHandler handler = new MapEventHandler();
 		
 		UserClass user = new UserClass();
-		injectProviders(handler, user);
 		
-		Listener listener = new SimpleListener(){
+		EventListener listener = new SimpleListener(){
 
 			public void onStart(OnStartEvent event) {
 				
@@ -32,18 +30,22 @@ public class Application {
 			}};
 		handler.subscribeListener(user, listener);
 		
+		injectProviders(handler, user);
+		
 		user.execute();
 	}
 	
-	private static void injectProviders(EventHandler handler, EventProvider<?> provider) throws Exception {
+	private static void injectProviders(EventHandler handler, Object provider) throws Exception {
 		
 		Field[] fields = provider.getClass().getDeclaredFields();
 		for(Field field : fields) {
 		
-			ProviderClass providerClassAnn = field.getAnnotation(ProviderClass.class);
+			EventProvider providerClassAnn = field.getAnnotation(EventProvider.class);
 			if(providerClassAnn != null) {
-				
-				EventProvider<?> wrappedProvider = handler.createProvider(provider);
+			    
+			    @SuppressWarnings("unchecked")
+                Class<? extends EventListener> listenerClass =  (Class<? extends EventListener>) field.getType();
+			    Object wrappedProvider = handler.createProvider(provider, listenerClass);
 				
 				field.setAccessible(true);
 				field.set(provider, wrappedProvider);

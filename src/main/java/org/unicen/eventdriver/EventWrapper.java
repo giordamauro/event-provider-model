@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EventWrapper {
 
-	Class<? extends EventProvider<?>>[] value();
+	Class<?>[] value();
 }

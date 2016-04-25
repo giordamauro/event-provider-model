@@ -1,9 +1,8 @@
-package org.unicen.operation.input;
+package org.unicen.operation.event;
 
 import java.util.Date;
 
 import org.unicen.operation.OperationContext;
-import org.unicen.operation.event.OnStartEvent;
 
 public class OnStartInputEvent<E> extends OnStartEvent {
 

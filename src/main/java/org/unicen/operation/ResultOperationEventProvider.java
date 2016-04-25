@@ -1,42 +1,46 @@
-package org.unicen.operation.result;
+package org.unicen.operation;
 
 import java.util.Date;
 
-import org.unicen.eventdriver.ProviderClass;
-import org.unicen.operation.OperationContext;
-import org.unicen.operation.ResultOperation;
+import org.unicen.eventdriver.EventProvider;
 import org.unicen.operation.event.OnFailEvent;
+import org.unicen.operation.event.OnFinishResultEvent;
 import org.unicen.operation.event.OnStartEvent;
+import org.unicen.operation.event.ResultOperationListener;
 
-public abstract class AbstractResultOperation<T> implements ResultOperation<T>, ResultOperationEventProvider<T> {
+public class ResultOperationEventProvider<T> implements ResultOperation<T> {
 
-	@ProviderClass
-	private ResultOperationEventProvider<T> provider;
+	@EventProvider
+	private ResultOperationListener<T> provider;
 	
-	@Override
+	private final ResultOperation<T> operation;
+	
+	public ResultOperationEventProvider(ResultOperation<T> operation) {
+        this.operation = operation;
+    }
+
+    @Override
 	public T execute(OperationContext context) throws Throwable {
 		
-		provider.onStart(context);
+		provider.onStart(onStartEvent(context));
 		
 		try {
-			T result = doExecute(context);
+			T result = operation.execute(context);
 
-			provider.onFinish(context, result);
+			provider.onFinish(onFinishEvent(context, result));
 			
 			return result;
 			
 		} catch(Throwable e){
 			
-			provider.onFail(context, e);
+			provider.onFail(onFailEvent(context, e));
 			
 			throw new IllegalStateException("Exception executing operation " + this.toString(), e);
 		}
 	}
-	
-	protected abstract T doExecute(OperationContext context) throws Throwable;
 
-	@Override
-	public OnStartEvent onStart(OperationContext context) {
+	
+	public OnStartEvent onStartEvent(OperationContext context) {
 		
 		Date startDate = new Date();
 		context.setOperationData(this, "startDate", startDate);
@@ -44,8 +48,8 @@ public abstract class AbstractResultOperation<T> implements ResultOperation<T>, 
 		return new OnStartEvent(context, startDate);
 	}
 
-	@Override
-	public OnFinishResultEvent<T> onFinish(OperationContext context, T result) {
+	
+	public OnFinishResultEvent<T> onFinishEvent(OperationContext context, T result) {
 
 		Date endDate = new Date();
 		Date startDate = context.getOperationData(this, "startDate");
@@ -59,8 +63,8 @@ public abstract class AbstractResultOperation<T> implements ResultOperation<T>, 
 		return new OnFinishResultEvent<>(context, endDate, took, result);
 	}
 
-	@Override
-	public OnFailEvent onFail(OperationContext context, Throwable exception) {
+	
+	public OnFailEvent onFailEvent(OperationContext context, Throwable exception) {
 		
 		Date failDate = new Date();
 		Date startDate = context.getOperationData(this, "startDate");
@@ -72,4 +76,9 @@ public abstract class AbstractResultOperation<T> implements ResultOperation<T>, 
 		
 		return new OnFailEvent(context, exception);
 	}
+
+    @Override
+    public Class<T> getOutputType() {
+        return operation.getOutputType();
+    }
 }

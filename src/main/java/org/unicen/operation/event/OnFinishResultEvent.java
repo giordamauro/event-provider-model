@@ -1,9 +1,8 @@
-package org.unicen.operation.result;
+package org.unicen.operation.event;
 
 import java.util.Date;
 
 import org.unicen.operation.OperationContext;
-import org.unicen.operation.event.OnFinishEvent;
 
 public class OnFinishResultEvent<T> extends OnFinishEvent {
 
