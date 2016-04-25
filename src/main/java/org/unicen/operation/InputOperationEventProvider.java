@@ -20,7 +20,7 @@ public class InputOperationEventProvider<T, E> implements InputOperation<T, E> {
     }
 
     @Override
-	public T execute(E input, OperationContext context) throws Throwable {
+	public T execute(E input, OperationContext context) {
 		
 		provider.onStart(onStartEvent(context, input));
 		

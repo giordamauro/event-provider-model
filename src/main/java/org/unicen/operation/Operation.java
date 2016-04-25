@@ -1,5 +1,5 @@
 package org.unicen.operation;
 
-interface Operation {
+public interface Operation {
 	
 }

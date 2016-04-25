@@ -21,7 +21,7 @@ class StartFinishEventProvider implements SimpleOperation {
 	}
 
 	@Override
-	public void execute(OperationContext context) throws Throwable {
+	public void execute(OperationContext context) {
 		
 		provider.onStart(onStartEvent(context));
 		
