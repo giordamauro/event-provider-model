@@ -3,7 +3,6 @@ package org.unicen.eventdriver;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,12 +42,7 @@ public class MapEventHandler implements EventHandler {
         // TODO: Check the interface & implementation -> listener + event
         // provider
 
-        Set<EventListener> listenerSubscribers = listeners.get(provider);
-        if (listenerSubscribers == null) {
-            listenerSubscribers = Collections.emptySet();
-        }
-
-        EventInvocationHandler eventInvocationHandler = new EventInvocationHandler(listenerSubscribers);
+        EventInvocationHandler eventInvocationHandler = new EventInvocationHandler(this, provider);
 
         Class<?>[] interfaces = new Class<?>[] { listenerInterface };
 
@@ -61,28 +55,36 @@ public class MapEventHandler implements EventHandler {
     private static class EventInvocationHandler implements InvocationHandler {
 
         private final ExecutorService executorService;
-        private final Set<EventListener> subscribers;
+        private final MapEventHandler eventHandler;
+        private final Object provider;
 
-        public EventInvocationHandler(Set<EventListener> subscribers) {
+        public EventInvocationHandler(MapEventHandler eventHandler, Object provider) {
 
-            this.subscribers = subscribers;
-            this.executorService = (!subscribers.isEmpty()) ? Executors.newFixedThreadPool(subscribers.size(), threadFactory) : null;
+        	this.executorService = Executors.newFixedThreadPool(10, threadFactory);
+        	
+        	this.eventHandler = eventHandler;
+            this.provider = provider;
         }
 
         public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
 
-            for (final EventListener listener : subscribers) {
-
-                executorService.execute(new Runnable() {
-
-                    public void run() {
-                        try {
-                            method.invoke(listener, args);
-                        } catch (Exception e) {
-                            throw new IllegalStateException(e);
-                        }
-                    }
-                });
+        	Set<EventListener> subscribers = eventHandler.listeners.get(provider);
+            
+        	if (subscribers != null) {
+            	
+	            for (final EventListener listener : subscribers) {
+	
+	                executorService.execute(new Runnable() {
+	
+	                    public void run() {
+	                        try {
+	                            method.invoke(listener, args);
+	                        } catch (Exception e) {
+	                            throw new IllegalStateException(e);
+	                        }
+	                    }
+	                });
+	            }
             }
 
             return null;
