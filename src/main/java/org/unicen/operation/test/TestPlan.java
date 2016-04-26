@@ -10,7 +10,7 @@ public class TestPlan implements SimpleOperation {
 	@Override
 	public void execute(OperationContext context) {
 
-//		System.out.println("Estoy corriendo un test");
-		throw new IllegalStateException("exceptionn");
+		System.out.println("Estoy corriendo un test");
+//		throw new IllegalStateException("exceptionn");
 	}
 }

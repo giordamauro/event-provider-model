@@ -3,6 +3,7 @@ package org.unicen.aspect;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.AbstractMap.SimpleEntry;
 
 public class AspectFactory {
 
@@ -34,8 +34,8 @@ public class AspectFactory {
     private static class AspectInvocationHandler<T> implements InvocationHandler {
 
         private final T aspectableInstance;
-        private Map<Method, List<Entry<Method, Aspect<T>>>> beforeAspects;
-        private Map<Method, List<Entry<Method, Aspect<T>>>> afterAspects;
+        private Map<String, List<Entry<Method, Aspect<T>>>> beforeAspects;
+        private Map<String, List<Entry<Method, Aspect<T>>>> afterAspects;
 
         public AspectInvocationHandler(T aspectableInstance, List<Aspect<T>> aspects) {
 
@@ -47,9 +47,7 @@ public class AspectFactory {
             
             this.beforeAspects = new HashMap<>();
             this.afterAspects = new HashMap<>();
-            
-            Map<String, List<Entry<Method, Aspect<T>>>> beforeMethods = new HashMap<>();
-            Map<String, List<Entry<Method, Aspect<T>>>> afterMethods = new HashMap<>();
+           
             for(Aspect<T> aspect : aspects) {
                 
                 Method[] aspectMethods = aspect.getClass().getDeclaredMethods();
@@ -57,41 +55,30 @@ public class AspectFactory {
                     
                     String aspectMethodName = aspectMethod.getName();
                     if(aspectMethodName.startsWith("before")) {
-                        String name = aspectMethodName.replaceFirst("before", "");
+                        String name = aspectMethodName.replaceFirst("before", "").toLowerCase();
                         
-                        List<Entry<Method, Aspect<T>>> nameAspects = beforeMethods.get(name);
+                        List<Entry<Method, Aspect<T>>> nameAspects = beforeAspects.get(name);
                         if(nameAspects == null) {
                             nameAspects = new ArrayList<>();
-                            beforeMethods.put(name, nameAspects);
+                            beforeAspects.put(name, nameAspects);
                         }
                         nameAspects.add(new SimpleEntry<Method, Aspect<T>>(aspectMethod, aspect));
                     }
                     else if(aspectMethodName.startsWith("after")) {
-                        String name = aspectMethodName.replaceFirst("after", "");
+                        String name = aspectMethodName.replaceFirst("after", "").toLowerCase();
                         
-                        List<Entry<Method, Aspect<T>>> nameAspects = afterMethods.get(name);
+                        List<Entry<Method, Aspect<T>>> nameAspects = afterAspects.get(name);
                         if(nameAspects == null) {
                             nameAspects = new ArrayList<>();
-                            afterMethods.put(name, nameAspects);
+                            afterAspects.put(name, nameAspects);
                         }
                         nameAspects.add(new SimpleEntry<Method, Aspect<T>>(aspectMethod, aspect));
                     }
                 }
             }
             
-            Method[] methods = aspectableClass.getDeclaredMethods();
-            for(Method method : methods) {
-                String name = method.getName();
-                List<Entry<Method, Aspect<T>>> beforeAspectsList = beforeMethods.get(name);
-                List<Entry<Method, Aspect<T>>> afterAspectsList = afterMethods.get(name);
-                
-                if(beforeAspectsList != null) {
-                	beforeAspects.put(method, beforeAspectsList);
-                }
-                if(afterAspectsList != null) {
-	                Collections.reverse(afterAspectsList);
-	                afterAspects.put(method, afterAspectsList);
-                }
+            for(Entry<String, List<Entry<Method, Aspect<T>>>> afterAspect : afterAspects.entrySet()) {
+                Collections.reverse(afterAspect.getValue());
             }
         }
 
@@ -120,7 +107,7 @@ public class AspectFactory {
         
         private void executeBeforeAspects(Method method, Object[] args) throws Throwable {
             
-            List<Entry<Method, Aspect<T>>> beforeList = beforeAspects.get(method);
+            List<Entry<Method, Aspect<T>>> beforeList = beforeAspects.get(method.getName().toLowerCase());
             
             if(beforeList != null) {
 	            for(Entry<Method, Aspect<T>> beforeEntry : beforeList) {
@@ -130,15 +117,17 @@ public class AspectFactory {
 	                parameters.addAll(Arrays.asList(args));
 	                
 	                Aspect<T> aspect = beforeEntry.getValue();
-	                beforeEntry.getKey().invoke(aspect, parameters.toArray());
+	                Method aspectMethod = beforeEntry.getKey();
 	                
+	                aspectMethod.setAccessible(true);
+	                aspectMethod.invoke(aspect, parameters.toArray());
 	            }
             }
         }
         
         private void executeAfterAspects(Method method, Object[] args, Object result, Throwable exception) throws Throwable {
             
-            List<Entry<Method, Aspect<T>>> afterList = afterAspects.get(method);
+            List<Entry<Method, Aspect<T>>> afterList = afterAspects.get(method.getName().toLowerCase());
             
             if(afterList != null) {
 	            for(Entry<Method, Aspect<T>> afterEntry : afterList) {
@@ -150,7 +139,10 @@ public class AspectFactory {
 	                parameters.addAll(Arrays.asList(args));
 	                
 	                Aspect<T> aspect = afterEntry.getValue();
-	                afterEntry.getKey().invoke(aspect, parameters.toArray());
+	                Method aspectMethod = afterEntry.getKey();
+                    
+                    aspectMethod.setAccessible(true);
+                    aspectMethod.invoke(aspect, parameters.toArray());
 	            }
             }
         }
