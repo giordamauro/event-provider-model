@@ -1,10 +1,5 @@
 package org.unicen.eventdriver.aspect;
 
-import java.util.Collections;
-import java.util.List;
-
-import org.unicen.aspect.Aspect;
-import org.unicen.aspect.AspectFactory;
 import org.unicen.eventdriver.EventHandler;
 import org.unicen.eventdriver.EventListener;
 import org.unicen.eventdriver.EventProviderFactory;
@@ -15,27 +10,14 @@ import org.unicen.operation.event.OnFailEvent;
 import org.unicen.operation.event.OnFinishEvent;
 import org.unicen.operation.event.OnStartEvent;
 import org.unicen.operation.event.StartFinishListener;
+import org.unicen.operation.support.AspectedSimpleOperation;
 import org.unicen.operation.support.SimpleOperationAspectSupport;
 import org.unicen.operation.test.TestPlan;
 
-public class Application {
+public class AspectableTest {
 
 	public static void main(String[] args) throws Throwable {
 
-//		Operacion WebService: que en realidad es HttpOperation (ojo que en Android hay otros clientes)
-//      Authorization managers -> basic, o generar 1 por operacion/hilo
-//      Ejecucion por linea de comandos (agregar variables de entorno)
-//	    Ejecucion por ADB ...
-
-//      Ir preparando pre processors: para CSV, datasets (1 hilo/operacion por linea)
-//      Ir preparando post processors: para DB, web, Extractores de variables (regexp)
-//		Assertions -> red/green (condiciones por operador... o programaticas)
-//	    Bifurcadores de secuencia (ForkOperation)
-	    
-//	    Donde estan las Metricas? Que es una metrica
-//      Variables de contexto en Jmeter
-//      Estudiar tambien SOAP ui
-		
 		EventHandler handler = new MapEventHandler();
 		EventProviderFactory providerFactory = new EventProviderFactory(handler);
 
@@ -62,7 +44,7 @@ public class Application {
         };
 		handler.subscribeListener(testPlan, listener);
 
-		Aspect<SimpleOperation> aspect = new SimpleOperationAspectSupport() {
+		SimpleOperationAspectSupport aspect = new SimpleOperationAspectSupport() {
 			
 			@Override
 			public void beforeExecute(SimpleOperation operation, OperationContext context) {
@@ -78,8 +60,7 @@ public class Application {
 			
 		};
 		
-		List<Aspect<SimpleOperation>> aspects = Collections.singletonList(aspect);
-		SimpleOperation apectTestPlan  = new AspectFactory().getWrapperInstance(testPlan, aspects);
+		SimpleOperation apectTestPlan  = new AspectedSimpleOperation(testPlan, aspect);
 		
 		apectTestPlan.execute(new OperationContext());
 	}

@@ -100,7 +100,7 @@ public class AspectFactory {
             executeAfterAspects(method, args, result, exception);
             
             if(exception != null) {
-                throw exception;
+                throw new IllegalStateException(String.format("Exception running aspected instance %s, method %s", aspectableInstance, method.getName()), exception);
             }
             return result;
         }
