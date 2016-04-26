@@ -85,10 +85,13 @@ public class AspectFactory {
                 List<Entry<Method, Aspect<T>>> beforeAspectsList = beforeMethods.get(name);
                 List<Entry<Method, Aspect<T>>> afterAspectsList = afterMethods.get(name);
                 
-                beforeAspects.put(method, beforeAspectsList);
-                
-                Collections.reverse(afterAspectsList);
-                afterAspects.put(method, afterAspectsList);
+                if(beforeAspectsList != null) {
+                	beforeAspects.put(method, beforeAspectsList);
+                }
+                if(afterAspectsList != null) {
+	                Collections.reverse(afterAspectsList);
+	                afterAspects.put(method, afterAspectsList);
+                }
             }
         }
 
@@ -118,31 +121,37 @@ public class AspectFactory {
         private void executeBeforeAspects(Method method, Object[] args) throws Throwable {
             
             List<Entry<Method, Aspect<T>>> beforeList = beforeAspects.get(method);
-            for(Entry<Method, Aspect<T>> beforeEntry : beforeList) {
-                
-                List<Object> parameters = new ArrayList<>();
-                parameters.add(aspectableInstance);
-                parameters.addAll(Arrays.asList(args));
-                
-                Aspect<T> aspect = beforeEntry.getValue();
-                beforeEntry.getKey().invoke(aspect, parameters.toArray());
-                
+            
+            if(beforeList != null) {
+	            for(Entry<Method, Aspect<T>> beforeEntry : beforeList) {
+	                
+	                List<Object> parameters = new ArrayList<>();
+	                parameters.add(aspectableInstance);
+	                parameters.addAll(Arrays.asList(args));
+	                
+	                Aspect<T> aspect = beforeEntry.getValue();
+	                beforeEntry.getKey().invoke(aspect, parameters.toArray());
+	                
+	            }
             }
         }
         
         private void executeAfterAspects(Method method, Object[] args, Object result, Throwable exception) throws Throwable {
             
             List<Entry<Method, Aspect<T>>> afterList = afterAspects.get(method);
-            for(Entry<Method, Aspect<T>> afterEntry : afterList) {
-                
-                List<Object> parameters = new ArrayList<>();
-                parameters.add(aspectableInstance);
-                parameters.add(result);
-                parameters.add(exception);
-                parameters.addAll(Arrays.asList(args));
-                
-                Aspect<T> aspect = afterEntry.getValue();
-                afterEntry.getKey().invoke(aspect, parameters.toArray());
+            
+            if(afterList != null) {
+	            for(Entry<Method, Aspect<T>> afterEntry : afterList) {
+	                
+	                List<Object> parameters = new ArrayList<>();
+	                parameters.add(aspectableInstance);
+	                parameters.add(result);
+	                parameters.add(exception);
+	                parameters.addAll(Arrays.asList(args));
+	                
+	                Aspect<T> aspect = afterEntry.getValue();
+	                afterEntry.getKey().invoke(aspect, parameters.toArray());
+	            }
             }
         }
 

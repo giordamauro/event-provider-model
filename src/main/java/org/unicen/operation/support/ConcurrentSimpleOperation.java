@@ -1,6 +1,7 @@
 package org.unicen.operation.support;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -13,6 +14,8 @@ public class ConcurrentSimpleOperation implements SimpleOperation {
 	private final List<SimpleOperation> steps;
 
 	public ConcurrentSimpleOperation(List<SimpleOperation> steps) {
+		
+		Objects.requireNonNull(steps, "Steps cannot be null");
 		
         this.steps = steps;
 		this.executor = Executors.newFixedThreadPool(steps.size());
